@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -17,23 +19,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      if (!API_URL) {
+        throw new Error("API URL not configured");
+      }
+
       // 🧹 Clear old cookie (safe reset)
       document.cookie = "access_token=; Max-Age=0; path=/";
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // 🔥 REQUIRED FOR COOKIE AUTH
-          body: JSON.stringify({
-            username,
-            password,
-          }),
-        }
-      );
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // 🔥 REQUIRED FOR COOKIE AUTH
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
 
       if (!res.ok) {
         throw new Error("Invalid username or password");
@@ -82,7 +85,9 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "6px", fontWeight: 500 }}>
+            <label
+              style={{ display: "block", marginBottom: "6px", fontWeight: 500 }}
+            >
               Username
             </label>
             <input
@@ -101,7 +106,9 @@ export default function LoginPage() {
           </div>
 
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "6px", fontWeight: 500 }}>
+            <label
+              style={{ display: "block", marginBottom: "6px", fontWeight: 500 }}
+            >
               Password
             </label>
             <input
