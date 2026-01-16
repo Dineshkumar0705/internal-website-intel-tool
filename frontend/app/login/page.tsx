@@ -23,7 +23,7 @@ export default function LoginPage() {
         throw new Error("API URL not configured");
       }
 
-      // 🧹 Clear old cookie (safe reset)
+      // 🧹 Clear old cookie
       document.cookie = "access_token=; Max-Age=0; path=/";
 
       const res = await fetch(`${API_URL}/auth/login`, {
@@ -31,21 +31,22 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // 🔥 REQUIRED FOR COOKIE AUTH
-        body: JSON.stringify({
-          username,
-          password,
-        }),
+        credentials: "include", // 🔥 REQUIRED for cookie auth
+        body: JSON.stringify({ username, password }),
       });
 
-      if (!res.ok) {
+      if (res.status === 401) {
         throw new Error("Invalid username or password");
       }
 
-      // Backend already sets cookie → just redirect
+      if (!res.ok) {
+        throw new Error("Login failed. Please try again.");
+      }
+
+      // ✅ Cookie is set by backend
       router.replace("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(err.message || "Unable to login");
     } finally {
       setLoading(false);
     }
@@ -76,7 +77,7 @@ export default function LoginPage() {
       >
         {/* Header */}
         <div style={{ marginBottom: "24px", textAlign: "center" }}>
-          <h1 style={{ marginBottom: "8px" }}>🔐 Internal Login</h1>
+          <h1>🔐 Internal Login</h1>
           <p style={{ color: "#555", fontSize: "14px" }}>
             Internal Website Intelligence Tool
           </p>
@@ -85,17 +86,13 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: "16px" }}>
-            <label
-              style={{ display: "block", marginBottom: "6px", fontWeight: 500 }}
-            >
-              Username
-            </label>
+            <label style={{ fontWeight: 500 }}>Username</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
               placeholder="admin"
+              required
               style={{
                 width: "100%",
                 padding: "12px",
@@ -106,17 +103,13 @@ export default function LoginPage() {
           </div>
 
           <div style={{ marginBottom: "16px" }}>
-            <label
-              style={{ display: "block", marginBottom: "6px", fontWeight: 500 }}
-            >
-              Password
-            </label>
+            <label style={{ fontWeight: 500 }}>Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
               placeholder="••••••••"
+              required
               style={{
                 width: "100%",
                 padding: "12px",
