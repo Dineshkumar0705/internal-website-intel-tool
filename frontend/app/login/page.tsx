@@ -23,16 +23,16 @@ export default function LoginPage() {
         throw new Error("API URL not configured");
       }
 
-      // 🧹 Clear old cookie
-      document.cookie = "access_token=; Max-Age=0; path=/";
-
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // 🔥 REQUIRED for cookie auth
-        body: JSON.stringify({ username, password }),
+        credentials: "include", // 🔥 REQUIRED for HttpOnly cookie auth
+        body: JSON.stringify({
+          username,
+          password,
+        }),
       });
 
       if (res.status === 401) {
@@ -43,7 +43,7 @@ export default function LoginPage() {
         throw new Error("Login failed. Please try again.");
       }
 
-      // ✅ Cookie is set by backend
+      // ✅ Cookie is set by backend → safe redirect
       router.replace("/dashboard");
     } catch (err: any) {
       setError(err.message || "Unable to login");
