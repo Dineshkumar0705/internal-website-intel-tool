@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-dotenv
+sqlalchemy
+pydantic
+pydantic-settings
+requests
+beautifulsoup4
+lxml
+slowapi
+python-jose
+passlib[bcrypt]
+openai
