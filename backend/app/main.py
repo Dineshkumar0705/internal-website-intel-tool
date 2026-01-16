@@ -10,12 +10,19 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# ✅ CORS CONFIG (CRITICAL)
+# ✅ FINAL PRODUCTION CORS CONFIG
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # Local development
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+
+        # Production frontend (Vercel)
+        "https://internal-website-intel-tool.vercel.app",
+
+        # Production backend (Render)
+        "https://internal-website-intel-tool-1.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
