@@ -17,36 +17,29 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 🧹 Clear old auth
+      // 🧹 Clear old cookie (safe reset)
       document.cookie = "access_token=; Max-Age=0; path=/";
-      localStorage.removeItem("access_token");
 
-      const res = await fetch("http://127.0.0.1:8000/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // 🔥 REQUIRED FOR COOKIE AUTH
+          body: JSON.stringify({
+            username,
+            password,
+          }),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Invalid username or password");
       }
 
-      const data = await res.json();
-
-      if (!data.access_token) {
-        throw new Error("No access token received");
-      }
-
-      // ✅ STORE TOKEN IN BOTH PLACES (CRITICAL FIX)
-      document.cookie = `access_token=${data.access_token}; path=/; SameSite=Lax`;
-      localStorage.setItem("access_token", data.access_token);
-
-      // ✅ Redirect safely
+      // Backend already sets cookie → just redirect
       router.replace("/dashboard");
     } catch (err: any) {
       setError(err.message || "Login failed");
@@ -97,13 +90,12 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              placeholder="Enter your username"
+              placeholder="admin"
               style={{
                 width: "100%",
                 padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #ccc",
-                fontSize: "14px",
               }}
             />
           </div>
@@ -117,19 +109,18 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="Enter your password"
+              placeholder="••••••••"
               style={{
                 width: "100%",
                 padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #ccc",
-                fontSize: "14px",
               }}
             />
           </div>
 
           {error && (
-            <p style={{ color: "#dc2626", marginBottom: "16px", fontSize: "14px" }}>
+            <p style={{ color: "#dc2626", marginBottom: "16px" }}>
               {error}
             </p>
           )}
@@ -142,10 +133,10 @@ export default function LoginPage() {
               padding: "12px",
               fontSize: "16px",
               borderRadius: "8px",
-              border: "none",
-              cursor: loading ? "not-allowed" : "pointer",
               background: loading ? "#9ca3af" : "#2563eb",
               color: "#fff",
+              border: "none",
+              cursor: loading ? "not-allowed" : "pointer",
               fontWeight: 600,
             }}
           >
