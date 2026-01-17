@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
@@ -14,25 +15,24 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# ✅ CORS (Vercel prod + previews)
+# CORS FIRST
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://internal-website-intel-tool.vercel.app",
-        "https://*.vercel.app",
+        "https://*.vercel.app",  # preview URLs
     ],
-    allow_credentials=False,   # JWT in header, not cookies
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Rate limiter
+# Rate limiter
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
-# ✅ Rate limit handler
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
@@ -44,11 +44,10 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 def on_startup():
     init_db()
 
-# Routers
 app.include_router(auth.router)
 app.include_router(history.router)
 app.include_router(analyze.router)
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "project": settings.project_name}
+    return {"status": "ok"}
