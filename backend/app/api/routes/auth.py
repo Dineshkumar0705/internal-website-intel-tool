@@ -9,6 +9,12 @@ from app.core.security import verify_password, create_access_token
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+# ✅ EXPLICIT OPTIONS HANDLER (CRITICAL)
+@router.options("/login", include_in_schema=False)
+def login_options():
+    return Response(status_code=200)
+
+
 @router.post("/login")
 def login(
     data: LoginRequest,
@@ -22,14 +28,14 @@ def login(
 
     token = create_access_token(subject=user.username)
 
-    # ✅ SET COOKIE (THIS IS THE KEY)
+    # ✅ SET COOKIE FOR NEXT.JS MIDDLEWARE
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=True,          # REQUIRED on Render (HTTPS)
-        samesite="None",      # REQUIRED for Vercel → Render
-        max_age=60 * 60 * 24  # 1 day
+        secure=True,        # HTTPS only (Render)
+        samesite="None",    # Required for Vercel → Render
+        max_age=60 * 60 * 24
     )
 
     return {"message": "Login successful"}
