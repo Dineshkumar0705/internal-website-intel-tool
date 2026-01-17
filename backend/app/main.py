@@ -1,35 +1,37 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
 
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-
 from app.core.config import settings
-from app.core.limiter import limiter
 from app.db.init_db import init_db
 from app.api.routes import auth, history, analyze
+
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title=settings.project_name,
     version="0.1.0",
 )
 
-# CORS FIRST
+# ✅ FIXED CORS (supports Vercel previews)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://internal-website-intel-tool.vercel.app",
-        "https://*.vercel.app",  # preview URLs
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # 🔥 THIS FIXES IT
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Rate limiter
+# Rate limiting
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 

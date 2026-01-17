@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ProtectedRoute from "../../components/ProtectedRoute";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 function DashboardContent() {
   const router = useRouter();
 
@@ -26,16 +29,26 @@ function DashboardContent() {
       return;
     }
 
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!API_URL) {
+      setError("API URL not configured");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("access_token");
-
       const res = await fetch(
-        `http://127.0.0.1:8000/analyze/?url=${encodeURIComponent(url)}`,
+        `${API_URL}/analyze/?url=${encodeURIComponent(url)}`,
         {
           method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
@@ -165,8 +178,7 @@ function DashboardContent() {
           <h2>📊 Analysis Result</h2>
 
           <p>
-            <strong>Company:</strong>{" "}
-            {result.company_name || "Unknown"}
+            <strong>Company:</strong> {result.company_name || "Unknown"}
           </p>
 
           <p>
@@ -177,20 +189,23 @@ function DashboardContent() {
           </p>
 
           <p>
-            <strong>Summary:</strong><br />
+            <strong>Summary:</strong>
+            <br />
             {result.summary}
           </p>
 
           {result.emails?.length > 0 && (
             <p>
-              <strong>Emails:</strong><br />
+              <strong>Emails:</strong>
+              <br />
               {result.emails.join(", ")}
             </p>
           )}
 
           {result.phone_numbers?.length > 0 && (
             <p>
-              <strong>Phone Numbers:</strong><br />
+              <strong>Phone Numbers:</strong>
+              <br />
               {result.phone_numbers.join(", ")}
             </p>
           )}

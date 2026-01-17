@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ResultCard from "../../components/ResultCard";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function AnalyzePage() {
   const router = useRouter();
 
@@ -14,21 +17,26 @@ export default function AnalyzePage() {
 
   function handleLogout() {
     localStorage.removeItem("access_token");
-    router.push("/login");
+    router.replace("/login");
   }
 
   async function handleAnalyze() {
     setError("");
     setResult(null);
 
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      router.push("/login");
+    if (!url.trim()) {
+      setError("Please enter a valid website URL");
       return;
     }
 
-    if (!url.trim()) {
-      setError("Please enter a valid website URL");
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!API_URL) {
+      setError("API URL not configured");
       return;
     }
 
@@ -36,10 +44,11 @@ export default function AnalyzePage() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/analyze/?url=${encodeURIComponent(url)}`,
+        `${API_URL}/analyze/?url=${encodeURIComponent(url)}`,
         {
           method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
@@ -47,11 +56,13 @@ export default function AnalyzePage() {
 
       if (res.status === 401) {
         localStorage.removeItem("access_token");
-        router.push("/login");
+        router.replace("/access-denied");
         return;
       }
 
-      if (!res.ok) throw new Error("Failed to analyze website");
+      if (!res.ok) {
+        throw new Error("Failed to analyze website");
+      }
 
       const data = await res.json();
       setResult(data);
@@ -83,14 +94,19 @@ export default function AnalyzePage() {
         <h1 style={{ margin: 0 }}>🔍 Analyze Website</h1>
 
         <nav style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <Link href="/">Home</Link>
-          <Link href="/history">History</Link>
+          <Link href="/">🏠 Home</Link>
+          <Link href="/history">📜 History</Link>
+
           <button
             onClick={handleLogout}
             style={{
-              padding: "6px 12px",
-              borderRadius: "6px",
+              padding: "8px 14px",
+              borderRadius: "8px",
+              border: "1px solid #ef4444",
+              background: "#fff",
+              color: "#ef4444",
               cursor: "pointer",
+              fontWeight: 600,
             }}
           >
             🚪 Logout
@@ -136,13 +152,14 @@ export default function AnalyzePage() {
             color: "#fff",
             border: "none",
             cursor: loading ? "not-allowed" : "pointer",
+            fontWeight: 600,
           }}
         >
           {loading ? "Analyzing website..." : "Analyze Website"}
         </button>
 
         {error && (
-          <p style={{ color: "red", marginTop: "12px" }}>{error}</p>
+          <p style={{ color: "#dc2626", marginTop: "12px" }}>{error}</p>
         )}
       </section>
 

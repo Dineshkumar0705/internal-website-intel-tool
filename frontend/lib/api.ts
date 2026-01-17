@@ -1,12 +1,12 @@
-const API_BASE = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function apiFetch(
   endpoint: string,
   options: RequestInit = {}
 ) {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
 
-  return fetch(`${API_BASE}${endpoint}`, {
+  const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -14,4 +14,13 @@ export async function apiFetch(
       ...(options.headers || {}),
     },
   });
+
+  if (res.status === 401) {
+    // Auto logout
+    localStorage.removeItem("access_token");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
+
+  return res;
 }
