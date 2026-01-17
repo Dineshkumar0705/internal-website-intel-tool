@@ -3,16 +3,17 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.models.user import User
-from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.auth import LoginRequest
 from app.core.security import verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/login", response_model=TokenResponse)
+
+@router.post("/login")
 def login(
     data: LoginRequest,
     response: Response,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.username == data.username).first()
 
@@ -21,18 +22,14 @@ def login(
 
     token = create_access_token(subject=user.username)
 
-    # 🔥 SET COOKIE (THIS WAS MISSING)
+    # ✅ SET COOKIE (THIS IS THE KEY)
     response.set_cookie(
         key="access_token",
         value=token,
-        httponly=True,           # 🔐 Secure
-        samesite="none",         # REQUIRED for cross-site (Vercel → Render)
-        secure=True,             # REQUIRED on HTTPS
-        max_age=60 * 60 * 24,    # 1 day
-        path="/",
+        httponly=True,
+        secure=True,          # REQUIRED on Render (HTTPS)
+        samesite="None",      # REQUIRED for Vercel → Render
+        max_age=60 * 60 * 24  # 1 day
     )
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-    }
+    return {"message": "Login successful"}
