@@ -10,12 +10,12 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError(null);
     setLoading(true);
 
     try {
@@ -23,12 +23,21 @@ export default function LoginPage() {
         throw new Error("API URL not configured");
       }
 
+      // ✅ Trim inputs (important)
+      const payload = {
+        username: username.trim(),
+        password: password.trim(),
+      };
+
+      // ✅ Clear old token before login
+      localStorage.removeItem("access_token");
+
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(payload),
       });
 
       if (res.status === 401) {
@@ -36,22 +45,26 @@ export default function LoginPage() {
       }
 
       if (!res.ok) {
-        throw new Error("Login failed. Please try again.");
+        throw new Error(`Login failed (${res.status})`);
       }
 
       const data = await res.json();
 
-      if (!data.access_token) {
-        throw new Error("No access token received");
+      if (!data?.access_token) {
+        throw new Error("Access token missing in response");
       }
 
-      // ✅ STORE JWT (SOURCE OF TRUTH)
+      // ✅ Store JWT (single source of truth)
       localStorage.setItem("access_token", data.access_token);
 
-      // ✅ Redirect
+      // ✅ Redirect to protected area
       router.replace("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Unable to login");
+      if (err.name === "TypeError") {
+        setError("Unable to reach server. Please try again.");
+      } else {
+        setError(err.message || "Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -82,7 +95,7 @@ export default function LoginPage() {
       >
         {/* Header */}
         <div style={{ marginBottom: "24px", textAlign: "center" }}>
-          <h1>🔐 Internal Login</h1>
+          <h1 style={{ marginBottom: "8px" }}>🔐 Internal Login</h1>
           <p style={{ color: "#555", fontSize: "14px" }}>
             Internal Website Intelligence Tool
           </p>
@@ -94,10 +107,12 @@ export default function LoginPage() {
             <label style={{ fontWeight: 500 }}>Username</label>
             <input
               type="text"
+              autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="admin"
               required
+              disabled={loading}
               style={{
                 width: "100%",
                 padding: "12px",
@@ -111,10 +126,12 @@ export default function LoginPage() {
             <label style={{ fontWeight: 500 }}>Password</label>
             <input
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="admin123"
               required
+              disabled={loading}
               style={{
                 width: "100%",
                 padding: "12px",
@@ -125,7 +142,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p style={{ color: "#dc2626", marginBottom: "16px" }}>
+            <p style={{ color: "#dc2626", marginBottom: "16px", fontSize: "14px" }}>
               {error}
             </p>
           )}
