@@ -28,11 +28,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // 🔥 REQUIRED for HttpOnly cookie auth
-        body: JSON.stringify({
-          username,
-          password,
-        }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (res.status === 401) {
@@ -43,7 +39,16 @@ export default function LoginPage() {
         throw new Error("Login failed. Please try again.");
       }
 
-      // ✅ Cookie is set by backend → safe redirect
+      const data = await res.json();
+
+      if (!data.access_token) {
+        throw new Error("No access token received");
+      }
+
+      // ✅ STORE JWT (SOURCE OF TRUTH)
+      localStorage.setItem("access_token", data.access_token);
+
+      // ✅ Redirect
       router.replace("/dashboard");
     } catch (err: any) {
       setError(err.message || "Unable to login");
@@ -108,7 +113,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="admin123"
               required
               style={{
                 width: "100%",
